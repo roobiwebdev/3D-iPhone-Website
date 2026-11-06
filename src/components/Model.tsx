@@ -4,10 +4,15 @@ import ModelView from "./ModelView";
 import { useEffect, useRef, useState } from "react";
 import { yellowImg } from "../utils";
 import * as THREE from "three";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { Canvas } from "@react-three/fiber";
-import { View } from "@react-three/drei";
+import { View, useTexture } from "@react-three/drei";
 import { models, sizes } from "../constants";
 import { animateWithGsapTimeline } from "../utils/animations";
+
+// Warm the texture cache for every finish so switching colours swaps the
+// screen texture instantly instead of suspending the model back to "Loading...".
+models.forEach((finish) => useTexture.preload(finish.img));
 
 const Model = () => {
   const [size, setSize] = useState("small");
@@ -18,8 +23,8 @@ const Model = () => {
   });
 
   // camera control for the model view
-  const cameraControlSmall = useRef();
-  const cameraControlLarge = useRef();
+  const cameraControlSmall = useRef<OrbitControlsImpl>(null);
+  const cameraControlLarge = useRef<OrbitControlsImpl>(null);
 
   // model
   const small = useRef(new THREE.Group());
@@ -69,7 +74,6 @@ const Model = () => {
               controlRef={cameraControlSmall}
               setRotationState={setSmallRotation}
               item={model}
-              size={size}
             />
 
             <ModelView
@@ -79,7 +83,6 @@ const Model = () => {
               controlRef={cameraControlLarge}
               setRotationState={setLargeRotation}
               item={model}
-              size={size}
             />
 
             <Canvas
@@ -103,7 +106,7 @@ const Model = () => {
 
             <div className="flex-center">
               <ul className="color-container">
-                {models.map((item: any, i: number) => (
+                {models.map((item, i) => (
                   <li
                     key={i}
                     className="w-6 h-6 rounded-full mx-2 cursor-pointer"

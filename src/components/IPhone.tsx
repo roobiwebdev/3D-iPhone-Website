@@ -6,31 +6,52 @@ Source: https://sketchfab.com/3d-models/apple-iphone-15-pro-max-black-df17520841
 Title: Apple iPhone 15 Pro Max Black
 */
 
-import * as THREE from 'three';
+import * as THREE from "three";
 import { useGLTF, useTexture } from "@react-three/drei";
-import { useEffect } from 'react';
+import type { ThreeElements } from "@react-three/fiber";
+import type { GLTF } from "three-stdlib";
+import { useEffect } from "react";
 
-const Model = (props: any) => {
-  const { nodes, materials } = useGLTF("/models/scene.glb");
+const MODEL_URL = "/models/scene.glb";
 
-  const texture = useTexture(props.item.img);
+type GLTFResult = GLTF & {
+  nodes: Record<string, THREE.Mesh>;
+  materials: Record<string, THREE.MeshStandardMaterial>;
+};
 
-    useEffect(() => {
-      Object.entries(materials).map((material) => {
-        // these are the material names that can't be changed color
-        if (
-          material[0] !== "zFdeDaGNRwzccye" &&
-          material[0] !== "ujsvqBWRMnqdwPx" &&
-          material[0] !== "hUlRcbieVuIiOXG" &&
-          material[0] !== "jlzuBkUzuJqgiAK" &&
-          material[0] !== "xNrofRCqOXXHVZt"
-        ) {
-          material[1].color = new THREE.Color(props.item.color[0]);
-        }
-        material[1].needsUpdate = true;
-      });
-    }, [materials, props.item]);
-  
+export type IPhoneFinish = {
+  title: string;
+  color: string[];
+  img: string;
+};
+
+type IPhoneProps = ThreeElements["group"] & {
+  item: IPhoneFinish;
+};
+
+// Materials that keep their own colour (screen, lenses, logo, ...).
+const FIXED_MATERIALS = new Set([
+  "zFdeDaGNRwzccye",
+  "ujsvqBWRMnqdwPx",
+  "hUlRcbieVuIiOXG",
+  "jlzuBkUzuJqgiAK",
+  "xNrofRCqOXXHVZt",
+]);
+
+const Model = ({ item, ...props }: IPhoneProps) => {
+  const { nodes, materials } = useGLTF(MODEL_URL) as unknown as GLTFResult;
+
+  const texture = useTexture(item.img);
+
+  useEffect(() => {
+    Object.entries(materials).forEach(([name, material]) => {
+      if (!FIXED_MATERIALS.has(name)) {
+        material.color = new THREE.Color(item.color[0]);
+      }
+      material.needsUpdate = true;
+    });
+  }, [materials, item]);
+
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -258,4 +279,4 @@ const Model = (props: any) => {
 
 export default Model;
 
-useGLTF.preload("/models/scene.glb");
+useGLTF.preload(MODEL_URL);
